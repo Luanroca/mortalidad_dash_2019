@@ -28,19 +28,28 @@ def load_codigos():
     df.columns = [str(c).strip().upper() for c in df.columns]
     code_col_candidates = [c for c in df.columns if "CIE-10" in c or "CIE10" in c or "CÓDIGO" in c or "CODIGO" in c]
     desc_col_candidates = [c for c in df.columns if "DESCRIP" in c]
+    
     if not code_col_candidates or not desc_col_candidates:
         df = pd.read_excel(CODIGOS_PATH, sheet_name='Final', header=None, skiprows=8)
         df = df.iloc[:, :2]
         df.columns = ['CODIGO','DESCRIPCION']
-        code_col = 'CODIGO'; desc_col='DESCRIPCION'
+        code_col = 'CODIGO'
+        desc_col = 'DESCRIPCION'
     else:
         code_col = code_col_candidates[0]
         desc_col = desc_col_candidates[0]
         df = df[[code_col, desc_col]].rename(columns={code_col:'CODIGO', desc_col:'DESCRIPCION'})
+    
+    # Limpieza más robusta de códigos
     df['CODIGO'] = df['CODIGO'].astype(str).str.strip().str.upper()
+    # Eliminar filas donde CODIGO es 'NAN' o vacío
+    df = df[df['CODIGO'].notna() & (df['CODIGO'] != 'NAN') & (df['CODIGO'] != '')]
+    
+    # Crear ICD4 (primeros 4 caracteres)
     df['ICD4'] = df['CODIGO'].str[:4]
-    df = df.dropna(subset=['ICD4'])
-    df = df.drop_duplicates(subset=['ICD4'])
+    # Eliminar duplicados manteniendo la primera ocurrencia
+    df = df.drop_duplicates(subset=['ICD4'], keep='first')
+    
     return df[['ICD4','DESCRIPCION']]
 
 def load_divipola():
@@ -121,9 +130,21 @@ def preprocess():
     df = load_nofetal()
     cod = load_codigos()
     divi = load_divipola()
+    
+    # Merge con división política
     df = df.merge(divi[['COD_DEPARTAMENTO','COD_MUNICIPIO','DEPARTAMENTO','MUNICIPIO']], 
                   on=['COD_DEPARTAMENTO','COD_MUNICIPIO'], how='left')
+    
+    # Merge con códigos de muerte - usar left join para mantener todos los registros
     df = df.merge(cod, on='ICD4', how='left')
     df = df.rename(columns={'DESCRIPCION': 'CAUSA_NOMBRE'})
+    
+    # Rellenar valores faltantes en CAUSA_NOMBRE
+    df['CAUSA_NOMBRE'] = df['CAUSA_NOMBRE'].fillna('Causa no especificada')
+    
+    # Para códigos ICD4 sin descripción, usar el código como descripción
+    mask = df['CAUSA_NOMBRE'] == 'Causa no especificada'
+    df.loc[mask, 'CAUSA_NOMBRE'] = 'Causa no especificada (' + df.loc[mask, 'ICD4'] + ')'
+    
     df['GRUPO_EDAD_LABEL'] = df['GRUPO_EDAD1'].apply(map_age_group)
     return df
