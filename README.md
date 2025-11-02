@@ -5,7 +5,7 @@ Autor: Luis Andres Rodriguez Carrillo
 Fuente de datos: DANE — Estadísticas Vitales (EEVV) 2019 (No fetal).
 
 ## Introducción
-Esta aplicación web interactiva permite explorar la mortalidad en Colombia para el año 2019 utilizando los microdatos de defunciones no fetales. Provee visualizaciones que facilitan la interpretación de patrones demográficos y regionales de mortalidad.
+Esta aplicación web interactiva permite explorar la mortalidad en Colombia para el año 2019, utilizando los microdatos de defunciones no fetales. Provee visualizaciones que facilitan la interpretación de patrones demográficos y regionales de mortalidad.
 
 ## Objetivo
 Construir un dashboard interactivo que integre:
@@ -21,6 +21,7 @@ Construir un dashboard interactivo que integre:
 mortality_dash_2019/
  ├── app.py
  ├── utils.py
+ ├── Dockerfile
  ├── requirements.txt
  ├── Procfile
  ├── assets/
@@ -56,30 +57,35 @@ Instalación de requisitos:
    - Start Command: gunicorn app:server
 3. Sube los archivos de datos a la carpeta data/ en tu repo (o usa almacenamiento remoto).
 4. Una vez Live, comparte la URL pública.
+5. Fue necesario para renderizar utilizar un archivo Docker (Dockerfile), para poder solucionar problemas de versionamiento con Pandas y realizar
+   la instalacion de todas la librerias de Python.
 
-### Despliegue (Railway)
-- Conecta el repo y define Start Command como: gunicorn app:server
-
-### Despliegue (Google App Engine)
-- Agrega un archivo app.yaml con:
-    runtime: python310
-    entrypoint: gunicorn -b :$PORT app:server
-- Despliega con: gcloud app deploy
-
-### Despliegue (AWS Elastic Beanstalk)
-- Empaqueta el repo y crea una aplicación Python.
-- Comando de inicio: gunicorn app:server
-
-## Visualizaciones y hallazgos
-- Mapa (centroides): tamaño de burbuja indica el total de muertes por departamento.
-- Serie por mes: variaciones estacionales en 2019.
-- Top 5 homicidios (X95): ranking municipal para agresión con arma de fuego.
-- Bottom 10 mortalidad: municipios con menor conteo total.
-- Top 10 causas: tabla con códigos ICD-10 (4 caracteres) y sus descripciones.
-- Barras apiladas por sexo: comparación Hombres vs. Mujeres por departamento.
-- Grupos de edad (GRUPO_EDAD1): categorías mapeadas según lineamientos DANE.
+## Visualizaciones
+- Mapa (centroides): tamaño de burbuja indica el total de muertes por departamento año 2019.
+![alt text](image.png)
+- Gráfico de Lineas: Representación del total de muertes por mes en Colombia, mostrando variaciones a lo largo del año 2019.
+![alt text](image-1.png)
+- Gráfico de Barras: Visualización de las 5 ciudades más violentas de Colombia, considerando homicidios (códigos X95, agresión con disparo de armas de fuego y casos no especificados).
+![alt text](image-2.png)
+- Gráfico circular: Muestra las 10 ciudades con menor índice de mortalidad.
+![alt text](image-3.png)
+- Tabla: Listado de las 10 principales causas de muerte en Colombia, incluyendo su código, nombre y total de casos (ordenadas de mayor a menor).
+![alt text](image-4.png)
+- Gráfico de barras apiladas: Comparación del total de muertes por sexo en cada departamento, para analizar diferencias significativas entre géneros.
+![alt text](image-5.png)
+- Histograma: Distribución de muertes, agrupando los valores de la variable GRUPO_EDAD1 según los rangos definidos en la tabla de referencia para identificar patrones de mortalidad a lo largo del ciclo de vida.
+![alt text](image-6.png)
 
 Nota: El archivo de códigos CIE-10 incluye metadatos previos. En utils.py se normaliza a partir de la fila 9 (header=8).
+
+## Hallazgos
+
+- Distribución territorial: los departamentos con mayor población presentan mayores conteos absolutos de defunciones. El uso de centroides permite una        lectura rápida, aunque puede complementarse con mapas coropléticos oficiales.
+- Comportamiento temporal: se observan variaciones mensuales que sugieren estacionalidad moderada.
+- Violencia letal: el subconjunto X95 (agresión con arma de fuego) concentra homicidios en pocos municipios dominantes.
+- Estructura causal: el ranking de causas resume la carga de mortalidad por grandes grupos CIE-10.
+- Diferencias por sexo: en la mayoría de departamentos se evidencian diferencias por sexo en los totales.
+- Ciclo de vida: los grupos de edad confirman una mayor mortalidad en edades avanzadas.
 
 ## Software
 Python, Dash, Plotly, Pandas, Numpy, OpenPyXL, Gunicorn.
@@ -90,5 +96,10 @@ Python, Dash, Plotly, Pandas, Numpy, OpenPyXL, Gunicorn.
   pip install -r requirements.txt
   python app.py
 
-## Enlaces de interés
+## Conclusiones
+El dashboard interactivo desarrollado con Dash y Plotly permite identificar de forma ágil patrones espaciales y temporales de la mortalidad, comparar perfiles por sexo y grupos de edad, y priorizar causas según su contribución. Su uso en la nube facilita la difusión y la toma de decisiones informadas por parte de actores académicos, institucionales y de salud pública.
+
+## Referencias y enlaces de interés
 - Catálogo del DANE (EEVV 2019): https://microdatos.dane.gov.co/index.php/catalog/696
+- McKinney, W. (2022). Python for Data Analysis (3rd ed.). O’Reilly Media.
+- Plotly Technologies Inc. (2024). Dash User Guide and Documentation. https://dash.plotly.com/
